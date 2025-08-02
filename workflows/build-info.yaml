@@ -1,0 +1,56 @@
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+name: build-info
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the current (private) repository
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # Define environment variable for the repository name
+      - name: Set repository name
+        id: vars
+        run: echo "REPO_NAME=${{ github.event.repository.name }}" >> $GITHUB_ENV
+
+      # Copy the DESCRIPTION file to a temporary directory
+      - name: Copy DESCRIPTION file
+        run: |
+          mkdir -p package_temp/${{ env.REPO_NAME }}
+          cp DESCRIPTION package_temp/${{ env.REPO_NAME }}/
+
+      # Check out the public repository
+      - name: Checkout public repo
+        uses: actions/checkout@v2
+        with:
+          repository: artalytics/build-info
+          path: public_repo
+          token: ${{ secrets.GH_PAT }}
+
+      # Copy the DESCRIPTION file from the private repository to the appropriate directory in the public repository
+      - name: Copy to public repo
+        run: |
+          mkdir -p public_repo/package/${{ env.REPO_NAME }}
+          cp -r package_temp/${{ env.REPO_NAME }} public_repo/package/
+
+      # Commit and push the changes to the public repository
+      - name: Commit and push changes
+        run: |
+          cd public_repo
+          git config --global user.email "bobby@artalytics.app"
+          git config --global user.name "Bobby Fatemi"
+          git add package/${{ env.REPO_NAME }}/DESCRIPTION
+          git commit -m "Update DESCRIPTION for ${{ env.REPO_NAME }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}

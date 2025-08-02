@@ -1,0 +1,44 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+name: lint
+
+permissions: read-all
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      CRAN: https://packagemanager.posit.co/cran/__linux__/noble/latest
+      GITHUB_PAT: ${{ secrets.GH_PAT }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      ART_RUN_AS_DEMO: FALSE
+      ART_USE_PG_CONF: ${{ secrets.ART_USE_PG_CONF }}
+      ART_PG_USER_PASSWD_PRD: ${{ secrets.ART_PG_USER_PASSWD_PRD }}
+      ART_BUCKETS_KEY_ID: ${{ secrets.ART_BUCKETS_KEY_ID }}
+      ART_BUCKETS_KEY_SECRET: ${{ secrets.ART_BUCKETS_KEY_SECRET }}
+      ART_OPENAI_KEY: ${{ secrets.ART_OPENAI_KEY }}
+      ART_OPENSEA_KEY: ${{ secrets.ART_OPENSEA_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::lintr
+          needs: lint
+
+      - name: Lint
+        run: lintr::lint_package()
+        shell: Rscript {0}
+        env:
+          LINTR_ERROR_ON_LINT: false
