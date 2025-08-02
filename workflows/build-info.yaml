@@ -44,13 +44,21 @@ jobs:
           cp -r package_temp/${{ env.REPO_NAME }} public_repo/package/
 
       # Commit and push the changes to the public repository
-      - name: Commit and push changes
+      - name: Commit and (if needed) push changes
         run: |
           cd public_repo
           git config --global user.email "bobby@artalytics.app"
-          git config --global user.name "Bobby Fatemi"
+          git config --global user.name  "Bobby Fatemi"
+
+          # stage the candidate update
           git add package/${{ env.REPO_NAME }}/DESCRIPTION
-          git commit -m "Update DESCRIPTION for ${{ env.REPO_NAME }}"
-          git push
+
+          # check whether anything actually changed
+          if git diff --cached --quiet; then
+            echo "No changes detected – nothing to commit."
+          else
+            git commit -m "Update DESCRIPTION for ${{ env.REPO_NAME }}"
+            git push
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
