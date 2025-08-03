@@ -38,7 +38,7 @@ jobs:
           token: ${{ secrets.GH_PAT }}
 
       # Copy the DESCRIPTION file from the private repository to the appropriate directory in the public repository
-      - name: Copy to public repo
+      - name: Copy to Public Repo
         run: |
           mkdir -p public_repo/package/${{ env.REPO_NAME }}
           cp -r package_temp/${{ env.REPO_NAME }} public_repo/package/
@@ -62,3 +62,4 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
