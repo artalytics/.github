@@ -37,14 +37,14 @@ sudo apt-get update
 
 # 6. Install R >= 4.5 and system dependencies
 sudo apt-get install -y \
-  r-base \
-  r-base-dev \
-  libmagick++-dev \
-  libgit2-dev \
-  libssl-dev \
-  libcurl4-openssl-dev \
-  build-essential \
-  pkg-config
+  r-base r-base-dev \
+  build-essential gfortran pkg-config \
+  libmagick++-dev libgit2-dev libssl-dev libcurl4-openssl-dev \
+  libxml2-dev libpoppler-cpp-dev poppler-data \
+  libavfilter-dev libpq-dev libarchive-dev libimage-exiftool-perl \
+  libarmadillo-dev libblas-dev liblapack-dev libarpack++2-dev \
+  libfftw3-dev libjpeg-dev libpng-dev libtiff5-dev \
+  libtesseract-dev libleptonica-dev tesseract-ocr-eng
 
 # 7. Verify R version
 echo "Installed R version:" $(Rscript -e 'cat(getRversion())')
