@@ -63,10 +63,23 @@ Rscript -e 'remotes::install_deps(dependencies = TRUE)'
 
 # 10. Install any missing GitHub packages
 Rscript -e 'remotes::install_github(c(
+  "RinteRface/shinyNextUI",
+  "JohnCoene/waiter",
   "r-data-science/rdstools",
-  "artalytics/artutils",
+  "r-data-science/rpgconn",
+  "r-data-science/psapi",
   "artalytics/artcore",
-  "RinteRface/shinyNextUI"
+  "artalytics/artutils",
+  "artalytics/artbenchmark",
+  "artalytics/artopenai",
+  "artalytics/artopensea",
+  "artalytics/pixelsense",
+  "artalytics/artpipelines",
+  "artalytics/modFrames",
+  "artalytics/modBrowse",
+  "artalytics/modGallery",
+  "artalytics/modUpload",
+  "artalytics/appPlatform"
 ))'
 
 # 11. Install TinyTeX (ensures lualatex is available)
