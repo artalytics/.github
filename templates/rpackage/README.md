@@ -12,8 +12,8 @@
 <!-- badges: end -->
 
 **IMPORTANT (For AGENTS and DEVELOPERS)**: 
- 1. First visit this link for organization wide guidance: [![Organization Agents Guide](https://img.shields.io/badge/Artalytics-AGENTS%20Guidelines-blue?logo=github)](https://github.com/artalytics/.github#artalytics-r-packages--agents-guidelines)
- 2. Next return to this repository and review file AGENTS.md for specific guidance, linked here: [![Repository Agents Guidance](https://img.shields.io/badge/AGENTS–Guidance-lightgrey?style=flat)](AGENTS.md)
+ 1. First visit this link for organization wide guidance: [![Organization Agents Guide](https://img.shields.io/badge/Org-Guidance-blue?logo=github)](https://github.com/artalytics/.github#artalytics-r-packages--agents-guidelines)
+ 2. Next return to this repository and review file AGENTS.md for specific guidance, linked here: [![Repository Agents Guidance](https://img.shields.io/badge/Repo–Guidance-blue?style=flat)](AGENTS.md)
  3. Lastly, additional notes and general R package guidance can be found below in this README.md file.
 
 ## Setup Dev/Test Environment
