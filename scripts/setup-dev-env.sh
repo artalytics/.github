@@ -11,6 +11,10 @@ if [ -z "${GITHUB_PAT:-}" ]; then
   exit 1
 fi
 
+# Export default environment settings (can be overridden)
+export ART_RUN_AS_DEMO="${ART_RUN_AS_DEMO:-FALSE}"
+export ART_USE_PG_CONF="${ART_USE_PG_CONF:-artprod}"
+
 # 1. Update package lists
 sudo apt-get update
 
@@ -49,41 +53,44 @@ sudo apt-get install -y \
 # 7. Verify R version
 echo "Installed R version:" $(Rscript -e 'cat(getRversion())')
 
-# 8. Install core R packages non-interactively
-Rscript -e 'install.packages(c("remotes", "pak", "devtools", "roxygen2", "testthat"), repos = "https://cloud.r-project.org")'
+# 8. Install pak for fast parallel installs
+Rscript -e 'install.packages("pak", repos = "https://cloud.r-project.org")'
 
-# -> Verify you're in package root by checking for DESCRIPTION
-if [ ! -f DESCRIPTION ]; then
-  echo "Error: DESCRIPTION file not found. Please run this script from the root of your R package."
-  exit 1
-fi
-
-# 9. From the repository root, install DESCRIPTION dependencies
-Rscript -e 'remotes::install_deps(dependencies = TRUE)'
-
-# 10. Install any missing GitHub packages
-Rscript -e 'remotes::install_github(c(
-  "RinteRface/shinyNextUI",
-  "JohnCoene/waiter",
+# 9. Use pak to install all core Artalytics packages in parallel
+Rscript -e 'pak::pkg_install(c(
   "r-data-science/rdstools",
   "r-data-science/rpgconn",
-  "r-data-science/psapi",
   "artalytics/artcore",
   "artalytics/artutils",
   "artalytics/artbenchmark",
   "artalytics/artopenai",
   "artalytics/artopensea",
   "artalytics/pixelsense",
-  "artalytics/artpipelines",
-  "artalytics/modFrames",
-  "artalytics/modBrowse",
-  "artalytics/modGallery",
-  "artalytics/modUpload",
-  "artalytics/appPlatform"
+  "artalytics/artpipelines"
 ))'
 
-# 11. Install TinyTeX (ensures lualatex is available)
-Rscript -e 'if (!requireNamespace("tinytex", quietly = TRUE)) install.packages("tinytex", repos = "https://cloud.r-project.org"); tinytex::install_tinytex()'
+# 10. Automate rpgconn configuration. Automate rpgconn configuration
+mkdir -p "$HOME/.rpgconn"
+cat > "$HOME/.rpgconn/config.yml" <<EOF
+config:
+  artprod:
+    host: "artalytics.app"
+    port: 5432
+    user: "shiny"
+    password: !expr Sys.getenv("ART_PG_USER_PASSWD_PRD")
+EOF
 
-# 12. Confirmation message
-echo "✅ CODEX environment setup complete!"
+# 11. Install minimal LaTeX system packages based on certificate.tex requirements
+sudo apt-get install -y --no-install-recommends \
+  texlive-latex-base \
+  texlive-latex-extra \
+  texlive-fonts-recommended \
+  texlive-luatex \
+  latexmk
+
+# 12. Install R tinytex wrapper via Debian package (no extra TeX libs)
+sudo apt-get install -y --no-install-recommends r-cran-tinytex
+
+# 13. Confirmation message
+echo "✅ CODEX environment setup complete!" C
+
