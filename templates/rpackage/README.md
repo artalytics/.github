@@ -12,8 +12,8 @@
 <!-- badges: end -->
 
 ## **Note for Agents & Developers**
- 1. First visit this link for organization wide guidance: [![Organization Agents Guide](https://img.shields.io/badge/Org%20Guidance-blue?logo=github?style=flat)](https://github.com/artalytics/.github#artalytics-r-packages--agents-guidelines)
- 2. Next return to this repository and review file AGENTS.md for specific guidance, linked here: [![Repository Agents Guidance](https://img.shields.io/badge/Repo%20Guidance-blue?logo=github?style=flat)](AGENTS.md)
+ 1. First visit this link for organization wide guidance: [![Organization Agents Guide](https://img.shields.io/badge/Org%20Guidance-blue?logo=github&style=flat)](https://github.com/artalytics/.github#artalytics-r-packages--agents-guidelines)
+ 2. Next return to this repository and review file AGENTS.md for specific guidance, linked here: [![Repository Agents Guidance](https://img.shields.io/badge/Repo%20Guidance-blue?logo=github&style=flat)](AGENTS.md)
  3. Lastly, additional notes and general R package guidance can be found below in this README.md file.
 
 ## **Setup Development Environment**
