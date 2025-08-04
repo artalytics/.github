@@ -11,11 +11,11 @@
 <!-- [![test-coverage](https://github.com/artalytics/{Package-Name}/actions/workflows/test-coverage.yaml/badge.svg?branch=main)](https://github.com/artalytics/{Package-Name}/actions/workflows/test-coverage.yaml) -->
 <!-- badges: end -->
 
-**IMPORTANT (For AGENTS and DEVELOPERS)**: 
+## **Note for Agents & Developers**
  1. First visit this link for organization wide guidance: [![Organization Agents Guide](https://img.shields.io/badge/Org-Guidance-blue?logo=github)](https://github.com/artalytics/.github#artalytics-r-packages--agents-guidelines)
  2. Next return to this repository and review file AGENTS.md for specific guidance, linked here: [![Repository Agents Guidance](https://img.shields.io/badge/Repo–Guidance-blue?style=flat?logo=github)](AGENTS.md)
  3. Lastly, additional notes and general R package guidance can be found below in this README.md file.
 
-## Setup Dev/Test Environment
+## **Setup Development Environment**
 
 To setup the dev & test environment for this package, see script found here: [![Setup Script](https://img.shields.io/badge/Codex–Setup%20Script-blue?logo=github&style=flat?logo=github)](https://github.com/artalytics/.github/blob/main/codex-setup-script.sh)
