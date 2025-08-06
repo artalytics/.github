@@ -1,4 +1,19 @@
-# Artalytics R Packages – AGENTS Guidelines
+# Artalytics R Packages
+
+Quick Reference for Dev/Test tools:
+
+- For basic package R CMD checks: `devtools::check()`
+- For full check to release CRAN: `devtools::check_release()`
+- For check run by github action: `rcmdcheck::rcmdcheck()`
+- For running only package tests: `testthat::test()`
+- For regenerating documentation: `roxygen2::roxygenise()`
+- For checking code style issues: `lintr::lint()`
+- For checking impact on depends: `revdepcheck::revdep_check()`
+- For (no upload) coverage check: `covr::package_coverage(".)`
+- For (w/upload) coverage report: `covr::codecov(commit = ..., token = ...)`
+
+
+## DEVELOPERS & AGENTS Guidelines
 
 This document defines the shared expectations and tooling standards for all R packages in the Artalytics platform. It serves as a common reference for **agentic tools** (e.g., GitHub Copilot Agents, Sourcegraph, Cursor) to interact with each repository consistently and with full context. It covers both the **internal utility libraries** (like `artcore`, `artutils`, `artopenai`, etc.) and the **Shiny module packages** (like `modBrowse`, `modUpload`, `modGallery`, etc.) that together make up the Artalytics ecosystem.
 
