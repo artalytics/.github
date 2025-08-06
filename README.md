@@ -13,7 +13,7 @@ Quick Reference for Dev/Test tools:
 - For (w/upload) coverage report: `covr::codecov(commit = ..., token = ...)`
 
 
-AGENTS Guidelines
+## DEVELOPERS & AGENTS Guidelines
 
 This document defines the shared expectations and tooling standards for all R packages in the Artalytics platform. It serves as a common reference for **agentic tools** (e.g., GitHub Copilot Agents, Sourcegraph, Cursor) to interact with each repository consistently and with full context. It covers both the **internal utility libraries** (like `artcore`, `artutils`, `artopenai`, etc.) and the **Shiny module packages** (like `modBrowse`, `modUpload`, `modGallery`, etc.) that together make up the Artalytics ecosystem.
 
