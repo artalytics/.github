@@ -23,6 +23,9 @@ labels: ["priority:p1", "repo:mod*", "epic"]
 - [ ] Test integration with sample data
 - [ ] Verify namespace exports
 - [ ] Improve README with examples
+
+- [ ] Update example applications for the module (if available)
+- [ ] Verify module works in headless CI (e.g., shinytest2)
 - [ ] Document module interface
 - [ ] Add demo mode instructions
 
