@@ -1,0 +1,60 @@
+repositories:
+  - artalytics/artcore
+  - artalytics/artutils
+  - artalytics/artpipelines
+  - artalytics/appPlatform
+  - artalytics/modFrames
+  - artalytics/modUpload
+  - artalytics/modBrowse
+  - artalytics/modGallery
+  - artalytics/pixelsense
+  - artalytics/pixelsense2
+  - artalytics/artopenai
+  - artalytics/artopensea
+  - artalytics/artbenchmark
+  - artalytics/site-main
+  - artalytics/build-info
+  - artalytics/site-blog
+  - artalytics/site-metrics
+  - artalytics/site-investors
+  - artalytics/modRegion
+  - artalytics/DataRoom
+  - artalytics/appMobile
+  - artalytics/r-package
+  - artalytics/icaa
+  - artalytics/site-certificates
+  - artalytics/.github-private
+labels:
+  - name: "priority:p0"
+    color: "b60205"
+    description: "Top priority / foundation"
+  - name: "priority:p1"
+    color: "d93f0b"
+    description: "High priority / specialized"
+  - name: "type:epic"
+    color: "5319e7"
+    description: "Cross-cutting work"
+  - name: "type:feature"
+    color: "0e8a16"
+    description: "New capability"
+  - name: "type:bug"
+    color: "d73a4a"
+    description: "Fix incorrect behavior"
+  - name: "type:chore"
+    color: "c2e0c6"
+    description: "Maintenance / infrastructure"
+  - name: "status:ready"
+    color: "1d76db"
+    description: "Ready to start"
+  - name: "status:blocked"
+    color: "000000"
+    description: "Waiting on dependency"
+  - name: "status:in-progress"
+    color: "fbca04"
+    description: "Actively being worked"
+  - name: "docs"
+    color: "0075ca"
+    description: "Documentation tasks"
+  - name: "test"
+    color: "5319e7"
+    description: "Testing tasks"
