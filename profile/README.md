@@ -36,5 +36,3 @@ We combine proprietary image analysis with modern web applications to:
 
 >💡 *Artalytics is currently in its pre-seed stage, building the foundation for a secure, scalable future of digital art authenticity and analytics.*
 
-
-
