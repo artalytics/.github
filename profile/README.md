@@ -30,7 +30,7 @@ We combine proprietary image analysis with modern web applications to:
 * To learn more about artalytics, visit our [**website**](https://artalytics.app).
 * Visit [**Certificates.Art**](https://certificates.art) to view live Certificates of Authenticity.
 * For video explanations and demos, check out our [**YouTube channel**](https://www.youtube.com/@artalytics).
-* View our [**investor materials**](https://investors.artalytics.app) for a deeper look at the vision and technology.
+* View our [**investor materials**](https://investors.artalytics.info) for a deeper look at the vision and technology.
 
 ---
 
