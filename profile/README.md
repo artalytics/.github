@@ -14,7 +14,8 @@ We combine proprietary image analysis with modern web applications to:
 
 ## 🌐 How It Works
 
-![Artalytics Flow Diagram](assets/Platform Diagrams - Simple.svg)
+![Platform Diagrams - Simple](https://github.com/user-attachments/assets/0eec636b-4872-4af9-9664-f0375d868606)
+
 
 
 ## ✨ Why Artalytics?
