@@ -10,6 +10,7 @@ We combine proprietary image analysis with modern web applications to:
 * **Showcase collections** – through interactive galleries that let anyone explore verified works.
 * **Deliver insights** – offering artists and collectors data-driven perspectives on style, value, and provenance.
 
+
 ---
 
 ## 🌐 How It Works
