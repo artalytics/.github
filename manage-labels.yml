@@ -1,23 +1,29 @@
 repositories:
-  - artalytics/api-waitlist
-  - artalytics/appAdmin
-  - artalytics/appPlatform
-  - artalytics/artauth
-  - artalytics/artbenchmark
   - artalytics/artcore
-  - artalytics/artsend
   - artalytics/artutils
   - artalytics/artpipelines
-  - artalytics/artopenai
-  - artalytics/artopensea
-  - artalytics/modArtist
-  - artalytics/modBrowse
+  - artalytics/appPlatform
   - artalytics/modFrames
-  - artalytics/modGallery
   - artalytics/modUpload
+  - artalytics/modBrowse
+  - artalytics/modGallery
   - artalytics/pixelsense
   - artalytics/pixelsense2
-
+  - artalytics/artopenai
+  - artalytics/artopensea
+  - artalytics/artbenchmark
+  - artalytics/site-main
+  - artalytics/build-info
+  - artalytics/site-blog
+  - artalytics/site-metrics
+  - artalytics/site-investors
+  - artalytics/modRegion
+  - artalytics/DataRoom
+  - artalytics/appMobile
+  - artalytics/r-package
+  - artalytics/icaa
+  - artalytics/site-certificates
+  - artalytics/.github-private
 labels:
   - name: "priority:p0"
     color: "b60205"
