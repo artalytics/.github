@@ -1,29 +1,23 @@
 repositories:
+  - artalytics/api-waitlist
+  - artalytics/appAdmin
+  - artalytics/appPlatform
+  - artalytics/artauth
+  - artalytics/artbenchmark
   - artalytics/artcore
+  - artalytics/artsend
   - artalytics/artutils
   - artalytics/artpipelines
-  - artalytics/appPlatform
-  - artalytics/modFrames
-  - artalytics/modUpload
-  - artalytics/modBrowse
-  - artalytics/modGallery
-  - artalytics/pixelsense
-  - artalytics/pixelsense2
   - artalytics/artopenai
   - artalytics/artopensea
-  - artalytics/artbenchmark
-  - artalytics/site-main
-  - artalytics/build-info
-  - artalytics/site-blog
-  - artalytics/site-metrics
-  - artalytics/site-investors
-  - artalytics/modRegion
-  - artalytics/DataRoom
-  - artalytics/appMobile
-  - artalytics/r-package
-  - artalytics/icaa
-  - artalytics/site-certificates
-  - artalytics/.github-private
+  - artalytics/modArtist
+  - artalytics/modBrowse
+  - artalytics/modFrames
+  - artalytics/modGallery
+  - artalytics/modUpload
+  - artalytics/pixelsense
+  - artalytics/pixelsense2
+
 labels:
   - name: "priority:p0"
     color: "b60205"
@@ -52,9 +46,12 @@ labels:
   - name: "status:in-progress"
     color: "fbca04"
     description: "Actively being worked"
-  - name: "docs"
+  - name: "task:docs"
     color: "0075ca"
     description: "Documentation tasks"
-  - name: "test"
+  - name: "task:tests"
     color: "5319e7"
     description: "Testing tasks"
+  - name: "task:database"
+    color: "006b75"
+    description: "Database and schema tasks"
