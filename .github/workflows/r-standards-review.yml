@@ -161,7 +161,16 @@ jobs:
         if: steps.changed-files.outputs.any_changed == 'true'
         id: parse-results
         run: |
-          RESPONSE='${{ steps.claude-review.outputs.response }}'
+          # Extract assistant messages from execution file
+          RESPONSE=$(jq -r '.[] | select(.type == "assistant") | .message.content[] | select(.type == "text") | .text' \
+            "${{ steps.claude-review.outputs.execution_file }}" 2>/dev/null | tr '\n' ' ' || echo "")
+
+          # Save response for later steps
+          {
+            echo 'RESPONSE<<EOF'
+            echo "$RESPONSE"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
 
           VIOLATION_COUNT=$(echo "$RESPONSE" | grep -oP 'TOTAL_VIOLATIONS: \K\d+' || echo "0")
 
@@ -181,7 +190,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const response = String.raw`${{ steps.claude-review.outputs.response }}`;
+            const response = String.raw`${{ steps.parse-results.outputs.RESPONSE }}`;
             const hasViolations = '${{ steps.parse-results.outputs.has_violations }}' === 'true';
             const violationCount = '${{ steps.parse-results.outputs.violation_count }}';
 
@@ -222,10 +231,7 @@ jobs:
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           mkdir -p review-output
-          cat << 'ARTIFACT_EOF' > review-output/review-report.txt
-          ${{ steps.claude-review.outputs.response }}
-          ARTIFACT_EOF
-
+          echo '${{ steps.parse-results.outputs.RESPONSE }}' > review-output/review-report.txt
           echo '${{ steps.parse-results.outputs.violation_count }}' > review-output/violation-count.txt
           echo '${{ steps.changed-files.outputs.files }}' > review-output/changed-files.txt
 
