@@ -188,9 +188,11 @@ jobs:
           steps.changed-files.outputs.any_changed == 'true' &&
           github.event_name == 'pull_request'
         uses: actions/github-script@v7
+        env:
+          REVIEW_RESPONSE: ${{ steps.parse-results.outputs.RESPONSE }}
         with:
           script: |
-            const response = String.raw`${{ steps.parse-results.outputs.RESPONSE }}`;
+            const response = process.env.REVIEW_RESPONSE || '';
             const hasViolations = '${{ steps.parse-results.outputs.has_violations }}' === 'true';
             const violationCount = '${{ steps.parse-results.outputs.violation_count }}';
 
