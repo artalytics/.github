@@ -19,7 +19,7 @@ on:
         description: 'Number of violations found'
         value: ${{ jobs.review.outputs.violation_count }}
     secrets:
-      CLAUDE_CODE_OAUTH_TOKEN:
+      ANTHROPIC_API_KEY:
         required: true
       GH_PAT:
         required: true
@@ -95,7 +95,7 @@ jobs:
         id: claude-review
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           additional_permissions: |
             actions: read
           prompt: |
