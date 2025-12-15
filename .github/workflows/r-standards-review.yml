@@ -231,9 +231,11 @@ jobs:
 
       - name: Save review artifact
         if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          REVIEW_RESPONSE: ${{ steps.parse-results.outputs.RESPONSE }}
         run: |
           mkdir -p review-output
-          echo '${{ steps.parse-results.outputs.RESPONSE }}' > review-output/review-report.txt
+          printf '%s\n' "$REVIEW_RESPONSE" > review-output/review-report.txt
           echo '${{ steps.parse-results.outputs.violation_count }}' > review-output/violation-count.txt
           echo '${{ steps.changed-files.outputs.files }}' > review-output/changed-files.txt
 
