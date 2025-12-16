@@ -1,0 +1,156 @@
+name: "Sync: Badges"
+
+# Reusable workflow to sync all badge statuses to artalytics/build-info
+# Called by individual R package repositories after CI workflows complete
+
+on:
+  workflow_call:
+    secrets:
+      GH_PAT:
+        required: true
+        description: "Personal access token with repo scope"
+
+jobs:
+  sync-badges:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Extract package info
+        id: pkg
+        run: |
+          if [ ! -f "DESCRIPTION" ]; then
+            echo "::error::No DESCRIPTION file found"
+            exit 1
+          fi
+
+          PKG_NAME=$(grep "^Package:" DESCRIPTION | sed 's/Package:[[:space:]]*//')
+          PKG_VERSION=$(grep "^Version:" DESCRIPTION | sed 's/Version:[[:space:]]*//')
+          REPO_NAME="${{ github.event.repository.name }}"
+          REPO_FULL="${{ github.repository }}"
+
+          # Validate not a template
+          if [[ "$PKG_NAME" == *"{"* ]]; then
+            echo "::error::Package contains template placeholders"
+            exit 1
+          fi
+
+          echo "pkg_name=$PKG_NAME" >> $GITHUB_OUTPUT
+          echo "pkg_version=$PKG_VERSION" >> $GITHUB_OUTPUT
+          echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
+          echo "repo_full=$REPO_FULL" >> $GITHUB_OUTPUT
+
+          echo "📦 Package: $PKG_NAME v$PKG_VERSION"
+
+      - name: Get workflow statuses
+        id: statuses
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          REPO="${{ steps.pkg.outputs.repo_full }}"
+
+          # Function to get latest workflow status
+          get_workflow_status() {
+            local workflow_file="$1"
+            local result=$(gh api "repos/${REPO}/actions/workflows/${workflow_file}/runs?branch=main&per_page=1" \
+              --jq '.workflow_runs[0].conclusion // "unknown"' 2>/dev/null || echo "unknown")
+
+            # Map conclusion to badge status
+            case "$result" in
+              success) echo "passing" ;;
+              failure) echo "failing" ;;
+              cancelled) echo "cancelled" ;;
+              skipped) echo "skipped" ;;
+              *) echo "unknown" ;;
+            esac
+          }
+
+          # Get status for each workflow
+          R_CMD_CHECK=$(get_workflow_status "R-CMD-check.yaml")
+          LINT=$(get_workflow_status "lint.yaml")
+          TEST_COVERAGE=$(get_workflow_status "test-coverage.yaml")
+
+          echo "r_cmd_check=$R_CMD_CHECK" >> $GITHUB_OUTPUT
+          echo "lint=$LINT" >> $GITHUB_OUTPUT
+          echo "test_coverage=$TEST_COVERAGE" >> $GITHUB_OUTPUT
+
+          echo "📊 R-CMD-check: $R_CMD_CHECK"
+          echo "📊 Lint: $LINT"
+          echo "📊 Test Coverage: $TEST_COVERAGE"
+
+      - name: Checkout build-info repository
+        uses: actions/checkout@v4
+        with:
+          repository: artalytics/build-info
+          path: build-info
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Update badge files
+        run: |
+          PKG_NAME="${{ steps.pkg.outputs.pkg_name }}"
+          PKG_VERSION="${{ steps.pkg.outputs.pkg_version }}"
+          REPO_NAME="${{ steps.pkg.outputs.repo_name }}"
+
+          mkdir -p build-info/badges
+          mkdir -p build-info/package/$PKG_NAME
+
+          # Copy DESCRIPTION
+          cp DESCRIPTION build-info/package/$PKG_NAME/
+
+          # Clean up old directory if package was renamed
+          if [ "$PKG_NAME" != "$REPO_NAME" ] && [ -d "build-info/package/$REPO_NAME" ]; then
+            rm -rf "build-info/package/$REPO_NAME"
+          fi
+
+          # Helper function to create badge JSON
+          create_badge() {
+            local file="$1"
+            local label="$2"
+            local status="$3"
+            local color
+
+            case "$status" in
+              passing) color="brightgreen" ;;
+              failing) color="red" ;;
+              cancelled) color="yellow" ;;
+              skipped) color="lightgrey" ;;
+              *) color="lightgrey" ;;
+            esac
+
+            cat > "$file" << EOF
+          {
+            "schemaVersion": 1,
+            "label": "$label",
+            "message": "$status",
+            "color": "$color"
+          }
+          EOF
+          }
+
+          # Create/update badge files
+          create_badge "build-info/badges/r-cmd-check-${PKG_NAME}.json" "R-CMD-check" "${{ steps.statuses.outputs.r_cmd_check }}"
+          create_badge "build-info/badges/lint-${PKG_NAME}.json" "lint" "${{ steps.statuses.outputs.lint }}"
+          create_badge "build-info/badges/test-coverage-${PKG_NAME}.json" "coverage" "${{ steps.statuses.outputs.test_coverage }}"
+
+          echo "✅ Updated badges for $PKG_NAME"
+
+      - name: Commit and push changes
+        working-directory: build-info
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          git add badges/ package/
+
+          if git diff --cached --quiet; then
+            echo "✅ No changes to commit"
+          else
+            PKG_NAME="${{ steps.pkg.outputs.pkg_name }}"
+            PKG_VERSION="${{ steps.pkg.outputs.pkg_version }}"
+            git commit -m "Sync badges for $PKG_NAME v$PKG_VERSION"
+            git pull --rebase origin main || true
+            git push
+            echo "✅ Pushed badge updates for $PKG_NAME"
+          fi
