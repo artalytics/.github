@@ -1,0 +1,72 @@
+name: pkgdown
+
+# Reusable workflow to build and deploy pkgdown documentation
+# Deploys to central docs repo: artalytics/docs.artalytics.dev
+# Site URL: https://docs.artalytics.dev/r/{package-name}
+
+on:
+  workflow_call:
+
+concurrency:
+  group: pkgdown-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GH_PAT }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      - name: Build site
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        shell: Rscript {0}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkgdown-site
+          path: docs/
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pkgdown-site
+          path: docs/
+
+      - name: Clone and deploy to central docs repo
+        env:
+          GITHUB_PAT: ${{ secrets.GH_PAT }}
+          PKG_NAME: ${{ github.event.repository.name }}
+        run: |
+          git clone https://x-access-token:${GITHUB_PAT}@github.com/artalytics/docs.artalytics.dev.git central-docs
+          cd central-docs
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p r/${PKG_NAME}
+          rm -rf r/${PKG_NAME}/*
+          cp -r ../docs/* r/${PKG_NAME}/
+
+          git add -A
+          git diff --staged --quiet || git commit -m "Deploy ${PKG_NAME} docs from ${{ github.repository }}@${{ github.sha }}"
+          git push
