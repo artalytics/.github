@@ -1,4 +1,4 @@
-name: pkgdown
+name: "R: pkgdown"
 
 # Reusable workflow to build and deploy pkgdown documentation
 # Deploys to central docs repo: artalytics/docs.artalytics.dev
