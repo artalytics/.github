@@ -1,7 +1,7 @@
-name: "Sync: Badges"
+name: "Sync: Build Info"
 
-# Reusable workflow to sync all badge statuses to artalytics/build-info
-# Called by individual R package repositories after CI workflows complete
+# Reusable workflow to sync DESCRIPTION and badge statuses to artalytics/build-info
+# Called by build-info.yaml in each R package repository
 
 on:
   workflow_call:
