@@ -1,0 +1,162 @@
+name: R Package Standards Auto-Fix
+
+on:
+  workflow_call:
+    inputs:
+      commit_fixes:
+        description: 'Automatically commit and push fixes'
+        type: boolean
+        default: true
+    outputs:
+      fixes_applied:
+        description: 'Number of fixes applied'
+        value: ${{ jobs.fix.outputs.fix_count }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    outputs:
+      fix_count: ${{ steps.parse-fix-results.outputs.fix_count }}
+
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Download review artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: r-standards-review-${{ github.event.pull_request.number || github.run_id }}
+          path: review-input
+
+      - name: Check for violations
+        id: check-violations
+        run: |
+          if [ -f review-input/violation-count.txt ]; then
+            COUNT=$(cat review-input/violation-count.txt)
+            if [ "$COUNT" -gt 0 ]; then
+              echo "has_violations=true" >> $GITHUB_OUTPUT
+              echo "Found $COUNT violations to fix"
+            else
+              echo "has_violations=false" >> $GITHUB_OUTPUT
+              echo "No violations to fix"
+            fi
+          else
+            echo "has_violations=false" >> $GITHUB_OUTPUT
+            echo "No review artifact found"
+          fi
+
+      - name: Read review report
+        if: steps.check-violations.outputs.has_violations == 'true'
+        id: read-report
+        run: |
+          {
+            echo 'REPORT<<EOF'
+            cat review-input/review-report.txt
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Run Claude Auto-Fixer
+        if: steps.check-violations.outputs.has_violations == 'true'
+        id: claude-fix
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are an R package code fixer. Your ONLY context is the violations report below.
+            
+            ## Violations Report
+            
+            ${{ steps.read-report.outputs.REPORT }}
+            
+            ## Instructions
+            
+            1. Parse each `---VIOLATION-START---` to `---VIOLATION-END---` block
+            2. For each violation where `AUTO_FIXABLE: true`:
+               - Open the specified FILE
+               - Navigate to LINE_START
+               - Replace CODE_BEFORE with CODE_AFTER exactly
+            3. Do NOT:
+               - Modify code outside reported violations
+               - Introduce new violations
+               - Change formatting beyond the fix scope
+            4. After applying fixes, run these R commands if available:
+               ```r
+               styler::style_pkg(indent_by = 4)
+               ```
+            
+            ## Output Format
+            
+            After fixing, output:
+            ```
+            ---FIX-SUMMARY-START---
+            FIXES_APPLIED: [number]
+            FIXES_SKIPPED: [number]
+            
+            APPLIED:
+            - [FILE:LINE] [RULE_ID]: [brief description]
+            
+            SKIPPED (with reason):
+            - [FILE:LINE] [RULE_ID]: [why skipped]
+            ---FIX-SUMMARY-END---
+            ```
+
+      - name: Parse fix results
+        if: steps.check-violations.outputs.has_violations == 'true'
+        id: parse-fix-results
+        run: |
+          RESPONSE='${{ steps.claude-fix.outputs.response }}'
+          FIX_COUNT=$(echo "$RESPONSE" | grep -oP 'FIXES_APPLIED: \K\d+' || echo "0")
+          echo "fix_count=$FIX_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Commit and push fixes
+        if: |
+          inputs.commit_fixes == true &&
+          steps.check-violations.outputs.has_violations == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "style: auto-fix R package standards violations
+
+            Applied ${{ steps.parse-fix-results.outputs.fix_count }} fixes.
+            
+            [skip ci]"
+            git push
+          fi
+
+      - name: Post fix summary comment
+        if: |
+          steps.check-violations.outputs.has_violations == 'true' &&
+          github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fixCount = '${{ steps.parse-fix-results.outputs.fix_count }}';
+            const committed = '${{ inputs.commit_fixes }}' === 'true';
+            
+            const body = committed
+              ? `## 🔧 Auto-Fix Applied\n\n**${fixCount} fix(es)** have been automatically applied and committed.\n\nPlease pull the latest changes and verify.`
+              : `## 🔧 Auto-Fix Results\n\n**${fixCount} fix(es)** were identified.\n\nCommit was not enabled. Review the suggested fixes above.`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
+            });
+
