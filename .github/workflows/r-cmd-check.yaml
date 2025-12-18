@@ -36,6 +36,7 @@ jobs:
       ART_OPENAI_KEY: ${{ secrets.ART_OPENAI_KEY }}
       ART_GEMINI_KEY: ${{ secrets.ART_GEMINI_KEY }}
       ART_OPENSEA_KEY: ${{ secrets.ART_OPENSEA_KEY }}
+      ART_RESEND_KEY: ${{ secrets.ART_RESEND_KEY }}
 
     steps:
       - name: Set Repository Name
