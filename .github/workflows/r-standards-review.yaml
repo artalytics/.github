@@ -310,9 +310,10 @@ jobs:
           echo "has_violations=false" >> $GITHUB_OUTPUT
           echo "violation_count=0" >> $GITHUB_OUTPUT
 
-      - name: Fail on violations
+      - name: Fail on violations (when auto-fix disabled)
         if: |
           inputs.fail_on_violations == true &&
+          inputs.auto_fix == false &&
           steps.parse-results.outputs.has_violations == 'true'
         run: |
           echo "::error::R package standards violations found (${{ steps.parse-results.outputs.violation_count }}). See PR comment for details."
@@ -321,6 +322,7 @@ jobs:
   auto-fix:
     needs: [review]
     if: |
+      always() &&
       inputs.auto_fix == true &&
       needs.review.outputs.has_violations == 'true' &&
       github.event_name == 'pull_request'
