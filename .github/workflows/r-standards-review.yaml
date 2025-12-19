@@ -413,7 +413,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "Edit,Write,Read,Glob,Grep"
+          claude_args: "--allowedTools Edit,Write,Read,Glob,Grep"
           prompt: |
             ${{ steps.read-fix-prompt.outputs.FIX_PROMPT }}
 
