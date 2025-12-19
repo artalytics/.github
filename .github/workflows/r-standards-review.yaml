@@ -11,6 +11,10 @@ on:
         description: 'Post review as PR comment'
         type: boolean
         default: true
+      auto_fix:
+        description: 'Automatically fix violations via PR'
+        type: boolean
+        default: true
     outputs:
       has_violations:
         description: 'Whether violations were detected'
@@ -18,6 +22,9 @@ on:
       violation_count:
         description: 'Number of violations found'
         value: ${{ jobs.review.outputs.violation_count }}
+      fix_pr_url:
+        description: 'URL of auto-fix PR (if created)'
+        value: ${{ jobs.auto-fix.outputs.pr_url }}
     secrets:
       ANTHROPIC_API_KEY:
         required: true
@@ -30,9 +37,7 @@ jobs:
     outputs:
       has_violations: ${{ steps.parse-results.outputs.has_violations }}
       violation_count: ${{ steps.parse-results.outputs.violation_count }}
-
-    # NOTE: Permissions must be set in the caller workflow, not here
-    # Reusable workflows cannot have job-level permissions
+      machine_output: ${{ steps.parse-results.outputs.machine_output }}
 
     steps:
       - name: Checkout repository
@@ -40,7 +45,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch checklist from .agents
+      - name: Fetch review checklist from .agents
         id: read-checklist
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
@@ -134,7 +139,7 @@ jobs:
             ---VIOLATION-END---
             ```
 
-            4. After all violations, provide summary:
+            4. After all violations, provide the machine-readable summary:
             ```
             ---SUMMARY-START---
             TOTAL_VIOLATIONS: [number]
@@ -157,6 +162,34 @@ jobs:
             ---SUMMARY-END---
             ```
 
+            6. AFTER the machine-readable output, provide a HUMAN-READABLE summary:
+            ```
+            ---HUMAN-READABLE-START---
+            ## R Package Standards Review
+
+            **[X] violation(s) found** | [n] critical | [n] warning | [n] style | [n] auto-fixable
+
+            ### `[filename]`
+
+            - [ ] **[RULE_ID]** `line [X]` · [severity] · [auto-fixable?]
+              [One-line description of the issue]
+
+            [Repeat for each file with violations]
+
+            ---
+
+            <details>
+            <summary>Exception Handling</summary>
+
+            To mark a violation as an approved exception:
+            1. Check the box next to the violation
+            2. Reply with justification for the exception
+            3. Re-run the workflow - checked items will be skipped
+
+            </details>
+            ---HUMAN-READABLE-END---
+            ```
+
       - name: Parse review results
         if: steps.changed-files.outputs.any_changed == 'true'
         id: parse-results
@@ -165,10 +198,33 @@ jobs:
           RESPONSE=$(jq -r '.[] | select(.type == "assistant") | .message.content[] | select(.type == "text") | .text' \
             "${{ steps.claude-review.outputs.execution_file }}" 2>/dev/null | tr '\n' ' ' || echo "")
 
-          # Save response for later steps
+          # Extract machine-readable portion (everything before HUMAN-READABLE-START)
+          MACHINE_OUTPUT=$(echo "$RESPONSE" | sed 's/---HUMAN-READABLE-START---.*//')
+
+          # Extract human-readable portion
+          HUMAN_OUTPUT=$(echo "$RESPONSE" | grep -oP '(?<=---HUMAN-READABLE-START---).*(?=---HUMAN-READABLE-END---)' || echo "")
+
+          # If no human output extracted, use a fallback
+          if [ -z "$HUMAN_OUTPUT" ]; then
+            HUMAN_OUTPUT="Review completed. See artifacts for details."
+          fi
+
+          # Save outputs
           {
             echo 'RESPONSE<<EOF'
             echo "$RESPONSE"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+          {
+            echo 'MACHINE_OUTPUT<<EOF'
+            echo "$MACHINE_OUTPUT"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+          {
+            echo 'HUMAN_OUTPUT<<EOF'
+            echo "$HUMAN_OUTPUT"
             echo 'EOF'
           } >> $GITHUB_OUTPUT
 
@@ -189,18 +245,19 @@ jobs:
           github.event_name == 'pull_request'
         uses: actions/github-script@v7
         env:
-          REVIEW_RESPONSE: ${{ steps.parse-results.outputs.RESPONSE }}
+          HUMAN_OUTPUT: ${{ steps.parse-results.outputs.HUMAN_OUTPUT }}
         with:
           script: |
-            const response = process.env.REVIEW_RESPONSE || '';
+            const humanOutput = process.env.HUMAN_OUTPUT || '';
             const hasViolations = '${{ steps.parse-results.outputs.has_violations }}' === 'true';
             const violationCount = '${{ steps.parse-results.outputs.violation_count }}';
 
-            const header = hasViolations
-              ? `## ❌ R Package Standards Review\n\n**${violationCount} violation(s) found.** Please address before merging.\n\n`
-              : '## ✅ R Package Standards Review\n\nAll checks passed!\n\n';
-
-            const body = header + '```\n' + response + '\n```';
+            let body;
+            if (hasViolations) {
+              body = humanOutput || `## ❌ R Package Standards Review\n\n**${violationCount} violation(s) found.** See workflow artifacts for details.`;
+            } else {
+              body = '## ✅ R Package Standards Review\n\nAll checks passed! No violations found.';
+            }
 
             // Find and update existing comment or create new one
             const comments = await github.rest.issues.listComments({
@@ -232,10 +289,10 @@ jobs:
       - name: Save review artifact
         if: steps.changed-files.outputs.any_changed == 'true'
         env:
-          REVIEW_RESPONSE: ${{ steps.parse-results.outputs.RESPONSE }}
+          MACHINE_OUTPUT: ${{ steps.parse-results.outputs.MACHINE_OUTPUT }}
         run: |
           mkdir -p review-output
-          printf '%s\n' "$REVIEW_RESPONSE" > review-output/review-report.txt
+          printf '%s\n' "$MACHINE_OUTPUT" > review-output/review-report.txt
           echo '${{ steps.parse-results.outputs.violation_count }}' > review-output/violation-count.txt
           echo '${{ steps.changed-files.outputs.files }}' > review-output/changed-files.txt
 
@@ -260,3 +317,232 @@ jobs:
         run: |
           echo "::error::R package standards violations found (${{ steps.parse-results.outputs.violation_count }}). See PR comment for details."
           exit 1
+
+  auto-fix:
+    needs: [review]
+    if: |
+      inputs.auto_fix == true &&
+      needs.review.outputs.has_violations == 'true' &&
+      github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      pr_url: ${{ steps.create-pr.outputs.pr_url }}
+      fixes_applied: ${{ steps.parse-fix-results.outputs.fixes_applied }}
+
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Download review artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: r-standards-review-${{ github.event.pull_request.number }}
+          path: review-input
+
+      - name: Check for fixable violations
+        id: check-fixable
+        run: |
+          if [ -f review-input/review-report.txt ]; then
+            # Check if there are any AUTO_FIXABLE: true violations
+            if grep -q "AUTO_FIXABLE: true" review-input/review-report.txt; then
+              echo "has_fixable=true" >> $GITHUB_OUTPUT
+              echo "Found auto-fixable violations"
+            else
+              echo "has_fixable=false" >> $GITHUB_OUTPUT
+              echo "No auto-fixable violations found"
+            fi
+          else
+            echo "has_fixable=false" >> $GITHUB_OUTPUT
+            echo "No review report found"
+          fi
+
+      - name: Create fix branch
+        if: steps.check-fixable.outputs.has_fixable == 'true'
+        id: create-branch
+        run: |
+          FIX_BRANCH="auto-fix/${{ github.head_ref }}"
+          echo "fix_branch=$FIX_BRANCH" >> $GITHUB_OUTPUT
+
+          # Delete remote branch if it exists (from previous run)
+          git push origin --delete "$FIX_BRANCH" 2>/dev/null || true
+
+          # Create and checkout fix branch
+          git checkout -b "$FIX_BRANCH"
+
+      - name: Fetch fix instructions from .agents
+        if: steps.check-fixable.outputs.has_fixable == 'true'
+        id: read-fix-prompt
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          FIX_PROMPT=$(gh api repos/artalytics/.agents/contents/_prompt/fix-r-pkg-standards.md \
+            --jq '.content' | base64 -d) || {
+            echo "::error::Failed to fetch fix prompt from .agents"
+            exit 1
+          }
+          {
+            echo 'FIX_PROMPT<<EOF'
+            echo "$FIX_PROMPT"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Read violations report
+        if: steps.check-fixable.outputs.has_fixable == 'true'
+        id: read-report
+        run: |
+          {
+            echo 'REPORT<<EOF'
+            cat review-input/review-report.txt
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Run Claude Auto-Fixer
+        if: steps.check-fixable.outputs.has_fixable == 'true'
+        id: claude-fix
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            ${{ steps.read-fix-prompt.outputs.FIX_PROMPT }}
+
+            ---
+
+            ## Violations Report to Process
+
+            ${{ steps.read-report.outputs.REPORT }}
+
+      - name: Parse fix results
+        if: steps.check-fixable.outputs.has_fixable == 'true'
+        id: parse-fix-results
+        run: |
+          RESPONSE=$(jq -r '.[] | select(.type == "assistant") | .message.content[] | select(.type == "text") | .text' \
+            "${{ steps.claude-fix.outputs.execution_file }}" 2>/dev/null || echo "")
+
+          FIXES_APPLIED=$(echo "$RESPONSE" | grep -oP 'FIXES_APPLIED: \K\d+' || echo "0")
+          FIXES_PENDING=$(echo "$RESPONSE" | grep -oP 'FIXES_PENDING_REVIEW: \K\d+' || echo "0")
+          FIXES_SKIPPED=$(echo "$RESPONSE" | grep -oP 'FIXES_SKIPPED: \K\d+' || echo "0")
+
+          echo "fixes_applied=$FIXES_APPLIED" >> $GITHUB_OUTPUT
+          echo "fixes_pending=$FIXES_PENDING" >> $GITHUB_OUTPUT
+          echo "fixes_skipped=$FIXES_SKIPPED" >> $GITHUB_OUTPUT
+
+          # Extract the fix report for PR body
+          FIX_REPORT=$(echo "$RESPONSE" | grep -oP '(?<=---FIX-REPORT-START---).*(?=---FIX-REPORT-END---)' || echo "$RESPONSE")
+          {
+            echo 'FIX_REPORT<<EOF'
+            echo "$FIX_REPORT"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Commit and push fixes
+        if: steps.check-fixable.outputs.has_fixable == 'true'
+        id: commit-fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            git commit -m "style: auto-fix R package standards violations
+
+            Applied ${{ steps.parse-fix-results.outputs.fixes_applied }} fix(es).
+            Pending review: ${{ steps.parse-fix-results.outputs.fixes_pending }}
+            Skipped: ${{ steps.parse-fix-results.outputs.fixes_skipped }}
+
+            Auto-generated by R Standards workflow."
+            git push -u origin "${{ steps.create-branch.outputs.fix_branch }}"
+          fi
+
+      - name: Create auto-fix PR
+        if: |
+          steps.check-fixable.outputs.has_fixable == 'true' &&
+          steps.commit-fixes.outputs.has_changes == 'true'
+        id: create-pr
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          FIX_REPORT: ${{ steps.parse-fix-results.outputs.FIX_REPORT }}
+        run: |
+          PR_BODY=$(cat <<'EOF'
+          ## 🔧 Auto-Fix: R Package Standards Violations
+
+          This PR contains automated fixes for violations found in #${{ github.event.pull_request.number }}.
+
+          **Applied:** ${{ steps.parse-fix-results.outputs.fixes_applied }} | **Pending Review:** ${{ steps.parse-fix-results.outputs.fixes_pending }} | **Skipped:** ${{ steps.parse-fix-results.outputs.fixes_skipped }}
+
+          ---
+
+          $FIX_REPORT
+
+          ---
+
+          ### Next Steps
+
+          1. **Review the changes** in the Files tab
+          2. **Merge this PR** into your branch to accept fixes
+          3. **Close without merging** to reject fixes
+          4. Items marked "Pending Review" require manual attention
+
+          > Auto-generated by R Standards workflow
+          EOF
+          )
+
+          PR_URL=$(gh pr create \
+            --base "${{ github.head_ref }}" \
+            --head "${{ steps.create-branch.outputs.fix_branch }}" \
+            --title "🔧 Auto-fix: R standards violations for #${{ github.event.pull_request.number }}" \
+            --body "$PR_BODY" \
+            2>&1) || {
+              echo "::warning::Failed to create PR: $PR_URL"
+              PR_URL=""
+            }
+
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
+      - name: Comment on original PR
+        if: |
+          steps.check-fixable.outputs.has_fixable == 'true' &&
+          steps.commit-fixes.outputs.has_changes == 'true' &&
+          steps.create-pr.outputs.pr_url != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prUrl = '${{ steps.create-pr.outputs.pr_url }}';
+            const fixesApplied = '${{ steps.parse-fix-results.outputs.fixes_applied }}';
+            const fixesPending = '${{ steps.parse-fix-results.outputs.fixes_pending }}';
+
+            const body = `## 🔧 Auto-Fix PR Created
+
+            **${fixesApplied} fix(es)** have been prepared in a separate PR:
+
+            👉 ${prUrl}
+
+            ${fixesPending > 0 ? `⚠️ **${fixesPending} item(s)** require manual review.` : ''}
+
+            Merge that PR into this branch to apply the fixes.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
+            });
+
+      - name: No fixes to apply
+        if: |
+          steps.check-fixable.outputs.has_fixable != 'true' ||
+          steps.commit-fixes.outputs.has_changes != 'true'
+        run: |
+          echo "No auto-fixable changes were made."
