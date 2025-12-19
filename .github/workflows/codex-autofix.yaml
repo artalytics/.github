@@ -1,0 +1,121 @@
+name: "Codex: Auto-Fix"
+
+on:
+  workflow_call:
+    inputs:
+      workflow_conclusion:
+        description: "Conclusion of the triggering workflow (success, failure, etc.)"
+        type: string
+        required: true
+      workflow_name:
+        description: "Name of the failed workflow"
+        type: string
+        required: true
+      workflow_url:
+        description: "URL to the failed workflow run"
+        type: string
+        required: true
+      head_branch:
+        description: "Branch that triggered the workflow"
+        type: string
+        required: true
+      head_sha:
+        description: "Commit SHA that triggered the workflow"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-fix:
+    # Only run when the triggering workflow failed
+    if: inputs.workflow_conclusion == 'failure'
+    runs-on: ubuntu-latest
+    env:
+      R_KEEP_PKG_SOURCE: yes
+      GITHUB_PAT: ${{ secrets.GH_PAT }}
+      CRAN: https://packagemanager.posit.co/cran/__linux__/noble/latest
+      ART_PGHOST: ${{ secrets.ART_PGHOST }}
+      ART_PGPORT: ${{ secrets.ART_PGPORT }}
+      ART_PGUSER: ${{ secrets.ART_PGUSER }}
+      ART_PGPASS: ${{ secrets.ART_PGPASS }}
+      ART_PGDATA: ${{ secrets.ART_PGDATA }}
+      ART_PGHOST_SITE: ${{ secrets.ART_PGHOST_SITE }}
+      ART_PGPORT_SITE: ${{ secrets.ART_PGPORT_SITE }}
+      ART_PGUSER_SITE: ${{ secrets.ART_PGUSER_SITE }}
+      ART_PGPASS_SITE: ${{ secrets.ART_PGPASS_SITE }}
+      ART_PGDATA_SITE: ${{ secrets.ART_PGDATA_SITE }}
+      ART_BUCKETS_KEY_ID: ${{ secrets.ART_BUCKETS_KEY_ID }}
+      ART_BUCKETS_KEY_SECRET: ${{ secrets.ART_BUCKETS_KEY_SECRET }}
+      ART_OPENAI_KEY: ${{ secrets.ART_OPENAI_KEY }}
+      ART_OPENSEA_KEY: ${{ secrets.ART_OPENSEA_KEY }}
+      ART_GEMINI_KEY: ${{ secrets.ART_GEMINI_KEY }}
+      ART_RESEND_KEY: ${{ secrets.ART_RESEND_KEY }}
+
+    steps:
+      - name: Check OpenAI API Key Set
+        run: |
+          if [ -z "$ART_OPENAI_KEY" ]; then
+            echo "ART_OPENAI_KEY secret is not set. Skipping auto-fix." >&2
+            exit 1
+          fi
+
+      - name: Checkout Failing Ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - name: Install R Dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::devtools
+          needs: check
+
+      - name: Run Codex
+        uses: openai/codex-action@main
+        id: codex
+        with:
+          openai_api_key: ${{ secrets.ART_OPENAI_KEY }}
+          prompt: >-
+            You are working in an R package repository using testthat for testing.
+            The package uses roxygen2 for documentation and follows tidyverse style conventions.
+            Read the repository structure, run the test suite with `devtools::test()`,
+            identify the minimal change needed to make all tests pass, implement only that change,
+            and stop. Do not refactor unrelated code or files. Keep changes small and surgical.
+            Focus on fixing test failures, not warnings. Check R/ for source code and tests/testthat/ for tests.
+          codex_args: '["--config","sandbox_mode=\"workspace-write\"","--search"]'
+
+      - name: Verify tests pass
+        run: |
+          Rscript -e "devtools::test(stop_on_failure = TRUE)"
+
+      - name: Create pull request with fixes
+        if: success()
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          commit-message: "codex (auto-fix): failing R tests"
+          branch: codex/auto-fix-${{ github.run_id }}
+          base: ${{ inputs.head_branch }}
+          title: "Auto-fix failing R-CMD-check via Codex"
+          body: |
+            Codex automatically generated this PR in response to a CI failure on workflow `${{ inputs.workflow_name }}`.
+
+            **Failed run:** ${{ inputs.workflow_url }}
+            **Head branch:** `${{ inputs.head_branch }}`
+
+            This PR contains minimal changes intended solely to make the R package tests pass.
+
+            Please review carefully before merging.

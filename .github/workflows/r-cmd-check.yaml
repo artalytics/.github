@@ -26,16 +26,21 @@ jobs:
       CRAN: https://packagemanager.posit.co/cran/__linux__/noble/latest
       GITHUB_PAT: ${{ secrets.GH_PAT }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      ART_BUCKETS_KEY_ID: ${{ secrets.ART_BUCKETS_KEY_ID }}
-      ART_BUCKETS_KEY_SECRET: ${{ secrets.ART_BUCKETS_KEY_SECRET }}
       ART_PGHOST: ${{ secrets.ART_PGHOST }}
       ART_PGPORT: ${{ secrets.ART_PGPORT }}
       ART_PGUSER: ${{ secrets.ART_PGUSER }}
       ART_PGPASS: ${{ secrets.ART_PGPASS }}
       ART_PGDATA: ${{ secrets.ART_PGDATA }}
+      ART_PGHOST_SITE: ${{ secrets.ART_PGHOST_SITE }}
+      ART_PGPORT_SITE: ${{ secrets.ART_PGPORT_SITE }}
+      ART_PGUSER_SITE: ${{ secrets.ART_PGUSER_SITE }}
+      ART_PGPASS_SITE: ${{ secrets.ART_PGPASS_SITE }}
+      ART_PGDATA_SITE: ${{ secrets.ART_PGDATA_SITE }}
+      ART_BUCKETS_KEY_ID: ${{ secrets.ART_BUCKETS_KEY_ID }}
+      ART_BUCKETS_KEY_SECRET: ${{ secrets.ART_BUCKETS_KEY_SECRET }}
       ART_OPENAI_KEY: ${{ secrets.ART_OPENAI_KEY }}
-      ART_GEMINI_KEY: ${{ secrets.ART_GEMINI_KEY }}
       ART_OPENSEA_KEY: ${{ secrets.ART_OPENSEA_KEY }}
+      ART_GEMINI_KEY: ${{ secrets.ART_GEMINI_KEY }}
       ART_RESEND_KEY: ${{ secrets.ART_RESEND_KEY }}
 
     steps:
