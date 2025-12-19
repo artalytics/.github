@@ -448,10 +448,20 @@ jobs:
       - name: Commit and push fixes
         if: steps.check-fixable.outputs.has_fixable == 'true'
         id: commit-fixes
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
+          # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Set up authentication for push
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          # Remove downloaded artifacts from staging (we don't want to commit these)
+          rm -rf review-input
+
+          # Stage only R package files that were modified
           git add -A
           if git diff --staged --quiet; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
