@@ -13,7 +13,9 @@ on:
 jobs:
   sync-badges:
     runs-on: ubuntu-latest
-
+    # env:
+    #   GH_PAT: ${{ secrets.GH_PAT }}
+      
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -47,7 +49,7 @@ jobs:
       - name: Get workflow statuses
         id: statuses
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           REPO="${{ steps.pkg.outputs.repo_full }}"
 
