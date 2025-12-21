@@ -18,16 +18,24 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
+          
+          model: "claude-opus-4-5"
+          
+          # Optional: Use sticky comments to make Claude reuse the same comment on subsequent pushes to the same PR
+          use_sticky_comment: true
+          
+          direct_prompt: |
+          
             Please review this pull request and provide feedback on:
             - Code quality and best practices
             - Potential bugs or issues
             - Performance considerations
-            - Security concerns
-            - Test coverage
+            - Test/code coverage
 
             Use the repository's AGENTS.md for guidance on style and conventions. Be constructive and helpful in your feedback.
 
             Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
+            
+            Never praise or flatter. Be concise. Use simple, clear language. If you don't have anything significant to add, just reply LGTM.
 
           claude_args: '--allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'

@@ -53,6 +53,9 @@ jobs:
 
       - name: Setup Pandoc
         uses: r-lib/actions/setup-pandoc@v2
+        
+      - name: Install air
+        uses: posit-dev/setup-air@v1
 
       - name: Setup R (Latest)
         uses: r-lib/actions/setup-r@v2
