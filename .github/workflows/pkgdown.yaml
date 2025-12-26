@@ -48,6 +48,21 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.4.549
+
+      - name: Render Quarto vignettes
+        run: |
+          if [ -d "vignettes" ] && ls vignettes/*.qmd >/dev/null 2>&1; then
+            echo "Rendering Quarto vignettes..."
+            quarto render vignettes/ --to html
+          else
+            echo "No Quarto vignettes found, skipping render step"
+          fi
+        shell: bash
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
