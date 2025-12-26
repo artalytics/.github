@@ -54,7 +54,7 @@ jobs:
       - name: Install TeX Packages
         if: ${{ inputs.tinytex }}
         run: |
-          tinytex::tlmgr_install(c("lm", ":lmodern", ":tex-gyre"))
+          tinytex::tlmgr_install(c("lm", "lmodern", "tex-gyre"))
         shell: Rscript {0}
 
       - name: Test coverage
