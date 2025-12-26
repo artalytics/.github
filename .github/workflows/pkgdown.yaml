@@ -57,7 +57,7 @@ jobs:
             echo "Rendering Quarto vignettes..."
             for qmd_file in vignettes/*.qmd; do
               echo "Rendering $qmd_file..."
-              quarto render "$qmd_file" --to html --execute-params eval:false || echo "Warning: Failed to render $qmd_file"
+              quarto render "$qmd_file" --to html || echo "Warning: Failed to render $qmd_file"
             done
           else
             echo "No Quarto vignettes found, skipping render step"
