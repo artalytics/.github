@@ -2,11 +2,11 @@ name: "R: Test Coverage"
 
 on:
   workflow_call:
-    inputs:
-      tinytex:
-        type: boolean
-        required: false
-        default: false
+  	inputs:
+  		tinytex:
+  			type: boolean
+  			required: false
+  			default: false
 
 jobs:
   test-coverage:
@@ -44,6 +44,12 @@ jobs:
       - name: Setup TinyTeX
         if: ${{ inputs.tinytex }}
         uses: r-lib/actions/setup-tinytex@v2
+        w
+      - name: Install TeX Packages
+        if: ${{ inputs.tinytex }}
+        run: |
+          tinytex::tlmgr_install(c("lm", ":lmodern", ":tex-gyre"))
+        shell: Rscript{0}
 
       - name: Install R Dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
