@@ -2,11 +2,11 @@ name: "R: Test Coverage"
 
 on:
   workflow_call:
-  	inputs:
-  		tinytex:
-  			type: boolean
-  			required: false
-  			default: false
+    inputs:
+      tinytex:
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   test-coverage:
