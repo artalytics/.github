@@ -44,18 +44,18 @@ jobs:
       - name: Setup TinyTeX
         if: ${{ inputs.tinytex }}
         uses: r-lib/actions/setup-tinytex@v2
-        
+
+      - name: Install R Dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::covr, any::xml2, any::tinytex
+          needs: coverage
+      
       - name: Install TeX Packages
         if: ${{ inputs.tinytex }}
         run: |
           tinytex::tlmgr_install(c("lm", ":lmodern", ":tex-gyre"))
         shell: Rscript {0}
-
-      - name: Install R Dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::covr, any::xml2
-          needs: coverage
 
       - name: Test coverage
         run: |
