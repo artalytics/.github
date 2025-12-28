@@ -1,12 +1,10 @@
-# Workflow derived from https://github.com/posit-dev/setup-air/tree/main/examples
+# Reusable workflow for checking Air formatting
+# Called by thin wrapper workflows in individual package repos
+# Derived from https://github.com/posit-dev/setup-air/tree/main/examples
+name: Air Format Check
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main, develop]
-
-name: Air Format Check
+  workflow_call:
 
 permissions: read-all
 
