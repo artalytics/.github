@@ -25,7 +25,7 @@ jobs:
           use_sticky_comment: true
           
           direct_prompt: |
-          
+
             Please review this pull request and provide feedback on:
             - Code quality and best practices
             - Potential bugs or issues
@@ -34,8 +34,12 @@ jobs:
 
             Use the repository's AGENTS.md for guidance on style and conventions. Be constructive and helpful in your feedback.
 
-            Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
-            
+            When posting your review, use the file-based approach to preserve markdown formatting:
+            1. Write your review to `/tmp/review.md` using the Write tool
+            2. Run `gh pr comment --body-file /tmp/review.md`
+
+            Do NOT use `gh pr comment -b "..."` directly as newlines will be lost.
+
             Never praise or flatter. Be concise. Use simple, clear language. If you don't have anything significant to add, just reply LGTM.
 
-          claude_args: '--allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          claude_args: '--allowedTools "Read,Write,Glob,Grep,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
