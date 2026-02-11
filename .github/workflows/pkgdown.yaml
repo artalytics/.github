@@ -1,7 +1,7 @@
 name: "R: pkgdown"
 
 # Reusable workflow to build and deploy pkgdown documentation
-# Deploys to central docs repo: artalytics/docs.artalytics.dev
+# Deploys to central docs repo: artalytics/site-packages
 # Site URL: https://docs.artalytics.dev/r/{package-name}
 
 on:
@@ -91,7 +91,7 @@ jobs:
           GITHUB_PAT: ${{ secrets.GH_PAT }}
           PKG_NAME: ${{ github.event.repository.name }}
         run: |
-          git clone https://x-access-token:${GITHUB_PAT}@github.com/artalytics/docs.artalytics.dev.git central-docs
+          git clone https://x-access-token:${GITHUB_PAT}@github.com/artalytics/site-packages.git central-docs
           cd central-docs
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
