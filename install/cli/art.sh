@@ -1,12 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-# art CLI installer for macOS/Linux/WSL
+# art CLI installer for macOS / Ubuntu / WSL
 # Downloads the latest release binary from GitHub.
 # Repo is private — requires GITHUB_TOKEN.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/artalytics/.github/main/install.sh | bash
+#   export GITHUB_TOKEN="ghp_..."
+#   curl -fsSL https://raw.githubusercontent.com/artalytics/.github/main/install/cli/art.sh | bash
 
 REPO="artalytics/art-cli"
 INSTALL_DIR="$HOME/.local/bin"
@@ -20,7 +21,7 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo ""
   echo "Then run:"
   echo "  export GITHUB_TOKEN=\"ghp_...\""
-  echo "  curl -fsSL https://raw.githubusercontent.com/artalytics/.github/main/install.sh | bash"
+  echo "  curl -fsSL https://raw.githubusercontent.com/artalytics/.github/main/install/cli/art.sh | bash"
   exit 1
 fi
 
