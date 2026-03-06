@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      # Required for actions/checkout to read private repositories
+      contents: read
       # Required to push suggestion comments to the PR
       pull-requests: write
 
