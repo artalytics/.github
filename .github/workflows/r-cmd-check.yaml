@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      extra-apt-packages:
+        description: "Space-separated apt packages to install before R dependencies (e.g. ffmpeg)"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   R-CMD-check:
@@ -67,6 +72,12 @@ jobs:
       - name: Setup TinyTeX
         if: ${{ inputs.tinytex }}
         uses: r-lib/actions/setup-tinytex@v2
+
+      - name: Install extra system packages
+        if: ${{ inputs.extra-apt-packages != '' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ inputs.extra-apt-packages }}
 
       - name: Install R Dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
