@@ -7,6 +7,11 @@ on:
         type: boolean
         required: false
         default: false
+      typst:
+        description: "Install the typst binary (certificate typesetting; pinned, musl static build)"
+        required: false
+        default: false
+        type: boolean
       extra-apt-packages:
         description: "Space-separated apt packages to install before R dependencies (e.g. ffmpeg)"
         required: false
@@ -49,6 +54,15 @@ jobs:
       - name: Setup TinyTeX
         if: ${{ inputs.tinytex }}
         uses: r-lib/actions/setup-tinytex@v2
+
+      - name: Setup Typst
+        if: ${{ inputs.typst }}
+        run: |
+          TYPST_VERSION="v0.14.2"
+          curl -fsSL "https://github.com/typst/typst/releases/download/${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" -o /tmp/typst.tar.xz
+          tar -xJf /tmp/typst.tar.xz -C /tmp
+          sudo mv /tmp/typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst
+          typst --version
 
       - name: Install extra system packages
         if: ${{ inputs.extra-apt-packages != '' }}
