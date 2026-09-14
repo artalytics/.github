@@ -13,6 +13,11 @@ on:
         required: false
         default: false
         type: boolean
+      allow-r-patch-minimum:
+        description: "Report R's patch-level minimum convention as a NOTE for packages requiring a specific R patch-level minimum"
+        required: false
+        default: false
+        type: boolean
       extra-apt-packages:
         description: "Space-separated apt packages to install before R dependencies (e.g. ffmpeg)"
         required: false
@@ -33,6 +38,8 @@ jobs:
     env:
       R_KEEP_PKG_SOURCE: yes
       _R_CHECK_SYSTEM_CLOCK_: 0
+      # Keep dependency enforcement; opt-in changes only the CRAN patch-level convention's severity.
+      _R_CHECK_R_DEPENDS_: ${{ inputs.allow-r-patch-minimum && 'note' || 'warn' }}
       CRAN: https://packagemanager.posit.co/cran/__linux__/noble/latest
       GITHUB_PAT: ${{ secrets.GH_PAT }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
