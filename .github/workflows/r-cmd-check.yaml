@@ -24,6 +24,12 @@ on:
         default: ""
         type: string
 
+# New PR commits supersede older checks; pushes and manual runs still finish independently.
+# The shared-workflow prefix keeps this group distinct from any caller concurrency group.
+concurrency:
+  group: shared-r-cmd-check-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
